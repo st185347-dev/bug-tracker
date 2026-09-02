@@ -5,10 +5,8 @@ pipeline {
         stage('Unit Tests - Backend') {
             steps {
                 dir('bugtracker-backend') {
-                    go test -v ./...
+                    sh 'go test -v ./...'
                 }
-                sh 'echo "Hello Stevan"'
-                sh 'date'
             }
         }
     }
