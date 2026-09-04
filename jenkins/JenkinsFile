@@ -11,7 +11,12 @@ pipeline {
                 }
                 steps {
                 dir('bugtracker-backend') {
-                    sh 'HOME=/tmp GOCACHE=/tmp/go-build GOPATH=/tmp/go go test -v ./...'
+                    sh 'HOME=/tmp GOCACHE=/tmp/go-build GOPATH=/tmp/go go test -v ./... 2>&1 | go-junit-report > test-results.xml'
+                }
+            }
+            post {
+                always {
+                    junit 'bugtracker-backend/test-results.xml'
                 }
             }
         }
