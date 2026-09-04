@@ -20,6 +20,8 @@ services:
     image: my-jenkins
     container_name: my-jenkins
     restart: on-failure
+    depends_on:
+      - jenkins-docker
     environment:
       - DOCKER_HOST=tcp://docker:2376
       - DOCKER_CERT_PATH=/certs/client
