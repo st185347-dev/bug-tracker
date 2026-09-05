@@ -1,0 +1,225 @@
+go: downloading github.com/google/uuid v1.6.0
+go: downloading go.etcd.io/bbolt v1.3.6
+go: downloading github.com/stretchr/testify v1.10.0
+go: downloading github.com/gorilla/mux v1.8.1
+go: downloading github.com/rs/cors v1.11.1
+go: downloading gopkg.in/yaml.v3 v3.0.1
+go: downloading github.com/davecgh/go-spew v1.1.1
+go: downloading github.com/pmezard/go-difflib v1.0.0
+go: downloading golang.org/x/sys v0.1.0
+?   	bugtracker-backend/internal/config	[no test files]
+?   	bugtracker-backend/internal/testutil	[no test files]
+=== RUN   TestServerInitialization
+[cors] 2026/09/05 11:18:56 Handler: Preflight request
+[cors] 2026/09/05 11:18:56   Preflight response headers: map[Access-Control-Allow-Credentials:[true] Access-Control-Allow-Methods:[GET] Access-Control-Allow-Origin:[http://localhost:3000] Access-Control-Max-Age:[300] Vary:[Origin, Access-Control-Request-Method, Access-Control-Request-Headers]]
+--- PASS: TestServerInitialization (0.11s)
+=== RUN   TestCORSConfiguration
+=== RUN   TestCORSConfiguration/Valid_OPTIONS_request_from_allowed_origin
+    main_test.go:170: Request: OPTIONS http://localhost:8081/api/health
+    main_test.go:171: Request Headers: map[Access-Control-Request-Method:[GET] Origin:[http://localhost:3000]]
+[cors] 2026/09/05 11:18:56 Handler: Preflight request
+[cors] 2026/09/05 11:18:56   Preflight response headers: map[Access-Control-Allow-Credentials:[true] Access-Control-Allow-Methods:[GET] Access-Control-Allow-Origin:[http://localhost:3000] Access-Control-Max-Age:[300] Vary:[Origin, Access-Control-Request-Method, Access-Control-Request-Headers]]
+    main_test.go:178: Response Status: 204
+    main_test.go:179: Response Headers: map[Access-Control-Allow-Credentials:[true] Access-Control-Allow-Methods:[GET] Access-Control-Allow-Origin:[http://localhost:3000] Access-Control-Max-Age:[300] Date:[Sat, 05 Sep 2026 11:18:56 GMT] Vary:[Origin, Access-Control-Request-Method, Access-Control-Request-Headers]]
+    main_test.go:186: Checking CORS headers:
+    main_test.go:187: Access-Control-Allow-Origin: http://localhost:3000
+    main_test.go:188: Access-Control-Allow-Methods: GET
+    main_test.go:189: Access-Control-Allow-Headers: 
+=== RUN   TestCORSConfiguration/OPTIONS_request_from_disallowed_origin
+    main_test.go:170: Request: OPTIONS http://localhost:8081/api/health
+    main_test.go:171: Request Headers: map[Access-Control-Request-Method:[GET] Origin:[http://evil.com]]
+[cors] 2026/09/05 11:18:56 Handler: Preflight request
+[cors] 2026/09/05 11:18:56   Preflight aborted: origin 'http://evil.com' not allowed
+    main_test.go:178: Response Status: 204
+    main_test.go:179: Response Headers: map[Date:[Sat, 05 Sep 2026 11:18:56 GMT] Vary:[Origin, Access-Control-Request-Method, Access-Control-Request-Headers]]
+=== RUN   TestCORSConfiguration/Valid_GET_request_from_allowed_origin
+    main_test.go:170: Request: GET http://localhost:8081/api/health
+    main_test.go:171: Request Headers: map[Origin:[http://localhost:3000]]
+[cors] 2026/09/05 11:18:56 Handler: Actual request
+[cors] 2026/09/05 11:18:56   Actual response added headers: map[Access-Control-Allow-Credentials:[true] Access-Control-Allow-Origin:[http://localhost:3000] Vary:[Origin]]
+2026/09/05 11:18:56 Health check request received from [::1]:48290
+2026/09/05 11:18:56 Sending health check response
+    main_test.go:178: Response Status: 200
+    main_test.go:179: Response Headers: map[Access-Control-Allow-Credentials:[true] Access-Control-Allow-Origin:[http://localhost:3000] Content-Length:[34] Content-Type:[application/json] Date:[Sat, 05 Sep 2026 11:18:56 GMT] Vary:[Origin]]
+    main_test.go:186: Checking CORS headers:
+    main_test.go:187: Access-Control-Allow-Origin: http://localhost:3000
+    main_test.go:188: Access-Control-Allow-Methods: 
+    main_test.go:189: Access-Control-Allow-Headers: 
+=== RUN   TestCORSConfiguration/OPTIONS_request_with_invalid_method
+    main_test.go:170: Request: OPTIONS http://localhost:8081/api/health
+    main_test.go:171: Request Headers: map[Access-Control-Request-Method:[INVALID] Origin:[http://localhost:3000]]
+[cors] 2026/09/05 11:18:56 Handler: Preflight request
+[cors] 2026/09/05 11:18:56   Preflight aborted: method 'INVALID' not allowed
+    main_test.go:178: Response Status: 204
+    main_test.go:179: Response Headers: map[Date:[Sat, 05 Sep 2026 11:18:56 GMT] Vary:[Origin, Access-Control-Request-Method, Access-Control-Request-Headers]]
+=== RUN   TestCORSConfiguration/Request_with_credentials
+    main_test.go:170: Request: GET http://localhost:8081/api/health
+    main_test.go:171: Request Headers: map[Cookie:[session=123] Origin:[http://localhost:3000]]
+[cors] 2026/09/05 11:18:56 Handler: Actual request
+[cors] 2026/09/05 11:18:56   Actual response added headers: map[Access-Control-Allow-Credentials:[true] Access-Control-Allow-Origin:[http://localhost:3000] Vary:[Origin]]
+2026/09/05 11:18:56 Health check request received from [::1]:48298
+2026/09/05 11:18:56 Sending health check response
+    main_test.go:178: Response Status: 200
+    main_test.go:179: Response Headers: map[Access-Control-Allow-Credentials:[true] Access-Control-Allow-Origin:[http://localhost:3000] Content-Length:[34] Content-Type:[application/json] Date:[Sat, 05 Sep 2026 11:18:56 GMT] Vary:[Origin]]
+    main_test.go:186: Checking CORS headers:
+    main_test.go:187: Access-Control-Allow-Origin: http://localhost:3000
+    main_test.go:188: Access-Control-Allow-Methods: 
+    main_test.go:189: Access-Control-Allow-Headers: 
+--- PASS: TestCORSConfiguration (0.11s)
+    --- PASS: TestCORSConfiguration/Valid_OPTIONS_request_from_allowed_origin (0.00s)
+    --- PASS: TestCORSConfiguration/OPTIONS_request_from_disallowed_origin (0.00s)
+    --- PASS: TestCORSConfiguration/Valid_GET_request_from_allowed_origin (0.00s)
+    --- PASS: TestCORSConfiguration/OPTIONS_request_with_invalid_method (0.00s)
+    --- PASS: TestCORSConfiguration/Request_with_credentials (0.00s)
+PASS
+ok  	bugtracker-backend/cmd/bugtracker	0.224s
+=== RUN   TestCreateComment
+2026/09/05 11:18:55 Database initialized successfully.
+=== RUN   TestCreateComment/Valid_comment_creation
+=== RUN   TestCreateComment/Invalid_bug_ID
+=== RUN   TestCreateComment/Invalid_bug_ID_format
+--- PASS: TestCreateComment (0.00s)
+    --- PASS: TestCreateComment/Valid_comment_creation (0.00s)
+    --- PASS: TestCreateComment/Invalid_bug_ID (0.00s)
+    --- PASS: TestCreateComment/Invalid_bug_ID_format (0.00s)
+=== RUN   TestGetComments
+2026/09/05 11:18:55 Database initialized successfully.
+=== RUN   TestGetComments/Get_existing_comments
+=== RUN   TestGetComments/Get_comments_for_non-existent_bug
+--- PASS: TestGetComments (0.00s)
+    --- PASS: TestGetComments/Get_existing_comments (0.00s)
+    --- PASS: TestGetComments/Get_comments_for_non-existent_bug (0.00s)
+=== RUN   TestDatabaseInitialization
+2026/09/05 11:18:55 Database initialized successfully.
+--- PASS: TestDatabaseInitialization (0.00s)
+=== RUN   TestMultipleInitializations
+2026/09/05 11:18:55 Database initialized successfully.
+2026/09/05 11:18:55 Database initialized successfully.
+--- PASS: TestMultipleInitializations (0.00s)
+=== RUN   TestCleanup
+2026/09/05 11:18:55 Database initialized successfully.
+--- PASS: TestCleanup (0.00s)
+=== RUN   TestInitWithInvalidPath
+--- PASS: TestInitWithInvalidPath (0.00s)
+=== RUN   TestConcurrentInitializations
+2026/09/05 11:18:55 Database initialized successfully.
+--- PASS: TestConcurrentInitializations (0.00s)
+PASS
+ok  	bugtracker-backend/internal/db	0.020s
+=== RUN   TestCreateBug
+2026/09/05 11:18:55 Database initialized successfully.
+=== RUN   TestCreateBug/Valid_bug_creation
+2026/09/05 11:18:55 CreateBug called from 192.0.2.1:1234
+2026/09/05 11:18:55 Request headers: map[]
+2026/09/05 11:18:55 Request method: POST
+=== RUN   TestCreateBug/Invalid_bug_-_missing_title
+2026/09/05 11:18:55 CreateBug called from 192.0.2.1:1234
+2026/09/05 11:18:55 Request headers: map[]
+2026/09/05 11:18:55 Request method: POST
+=== RUN   TestCreateBug/Invalid_JSON
+2026/09/05 11:18:55 CreateBug called from 192.0.2.1:1234
+2026/09/05 11:18:55 Request headers: map[]
+2026/09/05 11:18:55 Request method: POST
+2026/09/05 11:18:55 Failed to decode create bug request: invalid character 'j' looking for beginning of value
+--- PASS: TestCreateBug (0.01s)
+    --- PASS: TestCreateBug/Valid_bug_creation (0.00s)
+    --- PASS: TestCreateBug/Invalid_bug_-_missing_title (0.00s)
+    --- PASS: TestCreateBug/Invalid_JSON (0.00s)
+=== RUN   TestGetBug
+2026/09/05 11:18:55 Database initialized successfully.
+=== RUN   TestGetBug/Valid_bug_retrieval
+=== RUN   TestGetBug/Non-existent_bug
+=== RUN   TestGetBug/Invalid_bug_ID
+--- PASS: TestGetBug (0.00s)
+    --- PASS: TestGetBug/Valid_bug_retrieval (0.00s)
+    --- PASS: TestGetBug/Non-existent_bug (0.00s)
+    --- PASS: TestGetBug/Invalid_bug_ID (0.00s)
+=== RUN   TestUpdateBug
+2026/09/05 11:18:55 Database initialized successfully.
+=== RUN   TestUpdateBug/Valid_bug_update
+=== RUN   TestUpdateBug/Non-existent_bug
+=== RUN   TestUpdateBug/Invalid_bug_ID
+=== RUN   TestUpdateBug/Invalid_JSON
+--- PASS: TestUpdateBug (0.00s)
+    --- PASS: TestUpdateBug/Valid_bug_update (0.00s)
+    --- PASS: TestUpdateBug/Non-existent_bug (0.00s)
+    --- PASS: TestUpdateBug/Invalid_bug_ID (0.00s)
+    --- PASS: TestUpdateBug/Invalid_JSON (0.00s)
+=== RUN   TestDeleteBug
+2026/09/05 11:18:55 Database initialized successfully.
+=== RUN   TestDeleteBug/Valid_bug_deletion
+=== RUN   TestDeleteBug/Non-existent_bug
+=== RUN   TestDeleteBug/Invalid_bug_ID
+--- PASS: TestDeleteBug (0.00s)
+    --- PASS: TestDeleteBug/Valid_bug_deletion (0.00s)
+    --- PASS: TestDeleteBug/Non-existent_bug (0.00s)
+    --- PASS: TestDeleteBug/Invalid_bug_ID (0.00s)
+=== RUN   TestCreateComment
+2026/09/05 11:18:55 Database initialized successfully.
+=== RUN   TestCreateComment/Valid_comment_creation
+2026/09/05 11:18:55 Creating comment for bug 1
+=== RUN   TestCreateComment/Invalid_bug_ID
+2026/09/05 11:18:55 Creating comment for bug 999
+=== RUN   TestCreateComment/Missing_content
+2026/09/05 11:18:55 Creating comment for bug 1
+=== RUN   TestCreateComment/Invalid_JSON
+2026/09/05 11:18:55 Creating comment for bug 1
+--- PASS: TestCreateComment (0.00s)
+    --- PASS: TestCreateComment/Valid_comment_creation (0.00s)
+    --- PASS: TestCreateComment/Invalid_bug_ID (0.00s)
+    --- PASS: TestCreateComment/Missing_content (0.00s)
+    --- PASS: TestCreateComment/Invalid_JSON (0.00s)
+=== RUN   TestGetComments
+2026/09/05 11:18:55 Database initialized successfully.
+=== RUN   TestGetComments/Get_existing_comments
+2026/09/05 11:18:55 Getting comments for bug 1
+=== RUN   TestGetComments/Get_comments_for_non-existent_bug
+2026/09/05 11:18:55 Getting comments for bug 999
+=== RUN   TestGetComments/Invalid_bug_ID
+2026/09/05 11:18:55 Getting comments for bug invalid
+--- PASS: TestGetComments (0.00s)
+    --- PASS: TestGetComments/Get_existing_comments (0.00s)
+    --- PASS: TestGetComments/Get_comments_for_non-existent_bug (0.00s)
+    --- PASS: TestGetComments/Invalid_bug_ID (0.00s)
+=== RUN   TestHealthCheck
+2026/09/05 11:18:55 Health check request received from 
+2026/09/05 11:18:55 Sending health check response
+--- PASS: TestHealthCheck (0.00s)
+PASS
+ok  	bugtracker-backend/internal/handlers	0.023s
+=== RUN   TestBugValidation
+=== RUN   TestBugValidation/Valid_bug
+=== RUN   TestBugValidation/Missing_title
+=== RUN   TestBugValidation/Invalid_priority
+=== RUN   TestBugValidation/Invalid_status
+--- PASS: TestBugValidation (0.00s)
+    --- PASS: TestBugValidation/Valid_bug (0.00s)
+    --- PASS: TestBugValidation/Missing_title (0.00s)
+    --- PASS: TestBugValidation/Invalid_priority (0.00s)
+    --- PASS: TestBugValidation/Invalid_status (0.00s)
+=== RUN   TestCreateBugRequest
+=== RUN   TestCreateBugRequest/Valid_request
+=== RUN   TestCreateBugRequest/Missing_title
+--- PASS: TestCreateBugRequest (0.00s)
+    --- PASS: TestCreateBugRequest/Valid_request (0.00s)
+    --- PASS: TestCreateBugRequest/Missing_title (0.00s)
+=== RUN   TestCommentValidation
+=== RUN   TestCommentValidation/Valid_comment
+=== RUN   TestCommentValidation/Missing_author
+=== RUN   TestCommentValidation/Missing_content
+=== RUN   TestCommentValidation/Missing_bug_ID
+--- PASS: TestCommentValidation (0.00s)
+    --- PASS: TestCommentValidation/Valid_comment (0.00s)
+    --- PASS: TestCommentValidation/Missing_author (0.00s)
+    --- PASS: TestCommentValidation/Missing_content (0.00s)
+    --- PASS: TestCommentValidation/Missing_bug_ID (0.00s)
+=== RUN   TestCreateCommentRequest
+=== RUN   TestCreateCommentRequest/Valid_request
+=== RUN   TestCreateCommentRequest/Missing_author
+=== RUN   TestCreateCommentRequest/Missing_content
+--- PASS: TestCreateCommentRequest (0.00s)
+    --- PASS: TestCreateCommentRequest/Valid_request (0.00s)
+    --- PASS: TestCreateCommentRequest/Missing_author (0.00s)
+    --- PASS: TestCreateCommentRequest/Missing_content (0.00s)
+PASS
+ok  	bugtracker-backend/internal/models	0.002s

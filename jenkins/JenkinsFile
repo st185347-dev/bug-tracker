@@ -26,14 +26,24 @@ pipeline {
                     if [ "$report_exit" -ne 0 ]; then
                         exit "$report_exit"
                     fi
-                    exit "$test_exit"
 
                     # Generate coverage report
-                    go test -coverprofile=coverage.out -covermode=atomic ./...
-                    go tool cover -html=coverage.out -o coverage.html
+                    coverage_exit=0
+                    go test -coverprofile=coverage.out -covermode=atomic ./... || coverage_exit=$?
+                    if [ "$coverage_exit" -eq 0 ]; then
+                        go tool cover -html=coverage.out -o coverage.html
+                        coverage_exit=$?
+                    fi
 
-                    mdir -p reports
-                    mv coverage.html reports/
+                    if [ "$coverage_exit" -eq 0 ]; then
+                        mkdir -p reports
+                        mv coverage.html reports/
+                    fi
+
+                    if [ "$test_exit" -ne 0 ]; then
+                        exit "$test_exit"
+                    fi
+                    exit "$coverage_exit"
                     '''
                 }
             }

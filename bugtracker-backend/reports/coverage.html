@@ -1,0 +1,1072 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>bugtracker: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">bugtracker-backend/cmd/bugtracker/main.go (0.0%)</option>
+				
+				<option value="file1">bugtracker-backend/internal/db/comments.go (90.6%)</option>
+				
+				<option value="file2">bugtracker-backend/internal/db/db.go (51.9%)</option>
+				
+				<option value="file3">bugtracker-backend/internal/db/test_helpers.go (80.0%)</option>
+				
+				<option value="file4">bugtracker-backend/internal/handlers/bugs.go (70.5%)</option>
+				
+				<option value="file5">bugtracker-backend/internal/handlers/comments.go (82.0%)</option>
+				
+				<option value="file6">bugtracker-backend/internal/handlers/health.go (100.0%)</option>
+				
+				<option value="file7">bugtracker-backend/internal/handlers/test_helpers.go (100.0%)</option>
+				
+				<option value="file8">bugtracker-backend/internal/models/bug.go (100.0%)</option>
+				
+				<option value="file9">bugtracker-backend/internal/models/comment.go (100.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">no coverage</span>
+				<span class="cov1">low coverage</span>
+				<span class="cov2">*</span>
+				<span class="cov3">*</span>
+				<span class="cov4">*</span>
+				<span class="cov5">*</span>
+				<span class="cov6">*</span>
+				<span class="cov7">*</span>
+				<span class="cov8">*</span>
+				<span class="cov9">*</span>
+				<span class="cov10">high coverage</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package main
+
+import (
+        "context"
+        "log"
+        "net/http"
+        "os"
+        "os/signal"
+        "syscall"
+        "time"
+
+        "bugtracker-backend/internal/db"
+        "bugtracker-backend/internal/handlers"
+
+        "github.com/gorilla/mux"
+        "github.com/rs/cors"
+)
+
+func main() <span class="cov0" title="0">{
+        log.SetFlags(log.LstdFlags | log.Lshortfile)
+        log.Println("Starting Bug Tracker backend server...")
+
+        if err := db.Init(); err != nil </span><span class="cov0" title="0">{
+                log.Fatalf("Failed to initialize database: %v", err)
+        }</span>
+        <span class="cov0" title="0">defer db.Cleanup()
+
+        // Create the production server
+        srv := createServer()
+
+        // Channel to listen for errors coming from the listener
+        serverErrors := make(chan error, 1)
+
+        // Start the server
+        go func() </span><span class="cov0" title="0">{
+                log.Printf("Server starting on port %s...\n", srv.Addr)
+                serverErrors &lt;- srv.ListenAndServe()
+        }</span>()
+
+        // Channel to listen for an interrupt or terminate signal from the OS
+        <span class="cov0" title="0">shutdown := make(chan os.Signal, 1)
+        signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
+
+        // Blocking main and waiting for shutdown
+        select </span>{
+        case err := &lt;-serverErrors:<span class="cov0" title="0">
+                log.Fatalf("Error starting server: %v", err)</span>
+
+        case sig := &lt;-shutdown:<span class="cov0" title="0">
+                log.Printf("Received signal %v: initiating shutdown", sig)
+
+                // Give outstanding requests a deadline for completion
+                ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+                defer cancel()
+
+                // Asking listener to shut down and shed load
+                if err := srv.Shutdown(ctx); err != nil </span><span class="cov0" title="0">{
+                        log.Printf("Graceful shutdown did not complete in %v: %v", 10*time.Second, err)
+                }</span> else<span class="cov0" title="0"> {
+                        log.Println("Server shut down gracefully.")
+                }</span>
+        }
+}
+
+// Production server creation
+func createServer() *http.Server <span class="cov0" title="0">{
+        r := mux.NewRouter()
+
+        // Apply CORS middleware to all routes
+        c := cors.New(cors.Options{
+                AllowedOrigins: []string{
+                        "http://localhost:3000",
+                        "https://bugtracker-staging-jameswillett.fly.dev",
+                        "https://bugtracker-jameswillett.fly.dev",
+                },
+                AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+                AllowedHeaders: []string{"*"},
+                ExposedHeaders: []string{"Content-Length"},
+                AllowCredentials: true,
+        })
+
+        // Wrap the router with CORS middleware
+        handler := c.Handler(r)
+
+        // Register all routes
+        r.HandleFunc("/api/health", handlers.HealthCheck).Methods("GET")
+        apiRouter := r.PathPrefix("/api").Subrouter()
+        handlers.RegisterRoutes(apiRouter)
+
+        log.Printf("Starting server on :8080")
+        return &amp;http.Server{
+                Addr:    "0.0.0.0:8080",
+                Handler: handler,
+        }
+}</span>
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package db
+
+import (
+        "bugtracker-backend/internal/models"
+        "encoding/json"
+        "fmt"
+        "strconv"
+        "time"
+
+        "github.com/google/uuid"
+        "go.etcd.io/bbolt"
+)
+
+func CreateComment(bugID string, comment *models.Comment) error <span class="cov10" title="5">{
+        comment.CreatedAt = time.Now()
+        comment.ID = int(uuid.New().ID())
+        var err error
+        comment.BugID, err = strconv.Atoi(bugID)
+        if err != nil </span><span class="cov1" title="1">{
+                return fmt.Errorf("invalid bug ID format")
+        }</span>
+
+        <span class="cov8" title="4">_, err = GetBug(comment.BugID)
+        if err != nil </span><span class="cov1" title="1">{
+                return fmt.Errorf("bug not found")
+        }</span>
+
+        <span class="cov7" title="3">return db.Update(func(tx *bbolt.Tx) error </span><span class="cov7" title="3">{
+                b := tx.Bucket(commentsBucket)
+                encoded, err := json.Marshal(comment)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to marshal comment: %v", err)
+                }</span>
+                <span class="cov7" title="3">return b.Put(itob(comment.ID), encoded)</span>
+        })
+}
+
+func GetComments(bugID string) ([]models.Comment, error) <span class="cov4" title="2">{
+        var comments []models.Comment
+        bugIDInt, err := strconv.Atoi(bugID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("invalid bug ID format")
+        }</span>
+
+        <span class="cov4" title="2">_, err = GetBug(bugIDInt)
+        if err != nil </span><span class="cov1" title="1">{
+                return nil, fmt.Errorf("bug not found")
+        }</span>
+
+        <span class="cov1" title="1">err = db.View(func(tx *bbolt.Tx) error </span><span class="cov1" title="1">{
+                b := tx.Bucket(commentsBucket)
+                return b.ForEach(func(k, v []byte) error </span><span class="cov4" title="2">{
+                        var comment models.Comment
+                        if err := json.Unmarshal(v, &amp;comment); err != nil </span><span class="cov0" title="0">{
+                                return err
+                        }</span>
+                        <span class="cov4" title="2">if comment.BugID == bugIDInt </span><span class="cov4" title="2">{
+                                comments = append(comments, comment)
+                        }</span>
+                        <span class="cov4" title="2">return nil</span>
+                })
+        })
+
+        <span class="cov1" title="1">return comments, err</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package db
+
+import (
+        "encoding/binary"
+        "encoding/json"
+        "fmt"
+        "log"
+        "os"
+        "time"
+
+        "bugtracker-backend/internal/models"
+
+        "go.etcd.io/bbolt"
+)
+
+var (
+        db             *bbolt.DB
+        initialized    bool
+        bugsBucket     = []byte("bugs")
+        commentsBucket = []byte("comments")
+        counterBucket  = []byte("counter")
+        databasePath   = getDBPath()
+)
+
+func getDBPath() string <span class="cov1" title="1">{
+        if path := os.Getenv("DB_PATH"); path != "" </span><span class="cov0" title="0">{
+                return path
+        }</span>
+        <span class="cov1" title="1">return "bugs.db"</span>
+}
+
+func Init() error <span class="cov7" title="9">{
+        if initialized </span><span class="cov1" title="1">{
+                return fmt.Errorf("database already initialized")
+        }</span>
+
+        <span class="cov6" title="8">var err error
+        db, err = bbolt.Open(databasePath, 0600, nil)
+        if err != nil </span><span class="cov1" title="1">{
+                return fmt.Errorf("failed to open database: %w", err)
+        }</span>
+
+        <span class="cov6" title="7">err = db.Update(func(tx *bbolt.Tx) error </span><span class="cov6" title="7">{
+                _, err := tx.CreateBucketIfNotExists(bugsBucket)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("create bugs bucket: %w", err)
+                }</span>
+
+                <span class="cov6" title="7">_, err = tx.CreateBucketIfNotExists(commentsBucket)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("create comments bucket: %w", err)
+                }</span>
+
+                <span class="cov6" title="7">b, err := tx.CreateBucketIfNotExists(counterBucket)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("create counter bucket: %w", err)
+                }</span>
+                <span class="cov6" title="7">if b.Get([]byte("bug_id")) == nil </span><span class="cov6" title="6">{
+                        if err := b.Put([]byte("bug_id"), itob(0)); err != nil </span><span class="cov0" title="0">{
+                                return fmt.Errorf("initialize bug counter: %w", err)
+                        }</span>
+                }
+
+                <span class="cov6" title="7">return nil</span>
+        })
+        <span class="cov6" title="7">if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to create buckets: %w", err)
+        }</span>
+
+        <span class="cov6" title="7">log.Println("Database initialized successfully.")
+        initialized = true
+        return nil</span>
+}
+
+func CreateBug(bug *models.Bug) error <span class="cov4" title="4">{
+        if db == nil </span><span class="cov1" title="1">{
+                return fmt.Errorf("database not initialized")
+        }</span>
+        <span class="cov4" title="3">return db.Update(func(tx *bbolt.Tx) error </span><span class="cov4" title="3">{
+                b := tx.Bucket(bugsBucket)
+
+                nextID, err := getNextID(tx)
+                if err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+
+                <span class="cov4" title="3">bug.ID = nextID
+
+                encoded, err := json.Marshal(bug)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to marshal bug: %w", err)
+                }</span>
+
+                <span class="cov4" title="3">return b.Put(itob(bug.ID), encoded)</span>
+        })
+}
+
+func GetBug(id int) (*models.Bug, error) <span class="cov6" title="6">{
+        var bug models.Bug
+
+        err := db.View(func(tx *bbolt.Tx) error </span><span class="cov6" title="6">{
+                b := tx.Bucket(bugsBucket)
+                data := b.Get(itob(id))
+                if data == nil </span><span class="cov2" title="2">{
+                        return fmt.Errorf("bug not found")
+                }</span>
+
+                <span class="cov4" title="4">return json.Unmarshal(data, &amp;bug)</span>
+        })
+
+        <span class="cov6" title="6">if err != nil </span><span class="cov2" title="2">{
+                return nil, err
+        }</span>
+
+        <span class="cov4" title="4">return &amp;bug, nil</span>
+}
+
+func GetAllBugs() ([]*models.Bug, error) <span class="cov0" title="0">{
+        var bugs []*models.Bug
+
+        err := db.View(func(tx *bbolt.Tx) error </span><span class="cov0" title="0">{
+                b := tx.Bucket(bugsBucket)
+
+                return b.ForEach(func(k, v []byte) error </span><span class="cov0" title="0">{
+                        var bug models.Bug
+                        if err := json.Unmarshal(v, &amp;bug); err != nil </span><span class="cov0" title="0">{
+                                return fmt.Errorf("failed to unmarshal bug %s: %w", k, err)
+                        }</span>
+                        <span class="cov0" title="0">bugs = append(bugs, &amp;bug)
+                        return nil</span>
+                })
+        })
+
+        <span class="cov0" title="0">if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">return bugs, nil</span>
+}
+
+func DeleteBug(id int) error <span class="cov0" title="0">{
+        return db.Update(func(tx *bbolt.Tx) error </span><span class="cov0" title="0">{
+                b := tx.Bucket(bugsBucket)
+                if b == nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("bucket not found")
+                }</span>
+
+                <span class="cov0" title="0">if b.Get(itob(id)) == nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("bug not found")
+                }</span>
+
+                <span class="cov0" title="0">return b.Delete(itob(id))</span>
+        })
+}
+
+func Cleanup() <span class="cov6" title="8">{
+        if db != nil </span><span class="cov6" title="7">{
+                db.Close()
+                db = nil
+        }</span>
+        <span class="cov6" title="8">initialized = false</span>
+}
+
+func getNextID(tx *bbolt.Tx) (int, error) <span class="cov4" title="3">{
+        b := tx.Bucket(counterBucket)
+        id := b.Get([]byte("lastBugID"))
+
+        var nextID int
+        if id == nil </span><span class="cov4" title="3">{
+                nextID = 1
+        }</span> else<span class="cov0" title="0"> {
+                nextID = btoi(id) + 1
+        }</span>
+
+        <span class="cov4" title="3">if err := b.Put([]byte("lastBugID"), itob(nextID)); err != nil </span><span class="cov0" title="0">{
+                return 0, err
+        }</span>
+
+        <span class="cov4" title="3">return nextID, nil</span>
+}
+
+func itob(v int) []byte <span class="cov10" title="23">{
+        b := make([]byte, 8)
+        binary.BigEndian.PutUint64(b, uint64(v))
+        return b
+}</span>
+
+func btoi(b []byte) int <span class="cov0" title="0">{
+        return int(binary.BigEndian.Uint64(b))
+}</span>
+
+func UpdateBug(bug *models.Bug) error <span class="cov0" title="0">{
+        return db.Update(func(tx *bbolt.Tx) error </span><span class="cov0" title="0">{
+                b := tx.Bucket(bugsBucket)
+
+                existing := b.Get(itob(bug.ID))
+                if existing == nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("bug not found")
+                }</span>
+
+                <span class="cov0" title="0">bug.UpdatedAt = time.Now()
+
+                encoded, err := json.Marshal(bug)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to marshal bug: %w", err)
+                }</span>
+
+                <span class="cov0" title="0">return b.Put(itob(bug.ID), encoded)</span>
+        })
+}
+
+func CleanupTestDB() error <span class="cov4" title="4">{
+        if db == nil </span><span class="cov1" title="1">{
+                return nil
+        }</span>
+
+        <span class="cov4" title="3">err := db.Update(func(tx *bbolt.Tx) error </span><span class="cov4" title="3">{
+                if err := tx.DeleteBucket(bugsBucket); err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+                <span class="cov4" title="3">if err := tx.DeleteBucket(commentsBucket); err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+                <span class="cov4" title="3">if err := tx.DeleteBucket(counterBucket); err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+
+                <span class="cov4" title="3">if _, err := tx.CreateBucket(bugsBucket); err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+                <span class="cov4" title="3">if _, err := tx.CreateBucket(commentsBucket); err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+                <span class="cov4" title="3">if _, err := tx.CreateBucket(counterBucket); err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+                <span class="cov4" title="3">return nil</span>
+        })
+
+        <span class="cov4" title="3">return err</span>
+}
+
+func DeleteAllBugs() (int, error) <span class="cov0" title="0">{
+        var count int
+        err := db.Update(func(tx *bbolt.Tx) error </span><span class="cov0" title="0">{
+                b := tx.Bucket(bugsBucket)
+                if b == nil </span><span class="cov0" title="0">{
+                        count = 0
+                        return nil
+                }</span>
+                <span class="cov0" title="0">count = b.Stats().KeyN
+
+                if err := tx.DeleteBucket(bugsBucket); err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("delete bugs bucket: %w", err)
+                }</span>
+                
+                <span class="cov0" title="0">if _, err := tx.CreateBucket(bugsBucket); err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("create bugs bucket: %w", err)
+                }</span>
+
+                <span class="cov0" title="0">c := tx.Bucket(counterBucket)
+                if err := c.Put([]byte("lastBugID"), itob(0)); err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("reset bug counter: %w", err)
+                }</span>
+
+                <span class="cov0" title="0">return nil</span>
+        })
+        <span class="cov0" title="0">return count, err</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package db
+
+import (
+        "os"
+        "testing"
+
+        "go.etcd.io/bbolt"
+)
+
+func SetupTestDB(t *testing.T) func() <span class="cov10" title="2">{
+        tmpFile := "test.db"
+        os.Remove(tmpFile)
+        
+        databasePath = tmpFile
+        
+        if err := Init(); err != nil </span><span class="cov0" title="0">{
+                t.Fatalf("Failed to initialize test database: %v", err)
+        }</span>
+
+        <span class="cov10" title="2">err := db.Update(func(tx *bbolt.Tx) error </span><span class="cov10" title="2">{
+                b, err := tx.CreateBucketIfNotExists(counterBucket)
+                if err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+                <span class="cov10" title="2">return b.Put([]byte("bug_id"), itob(0))</span>
+        })
+        <span class="cov10" title="2">if err != nil </span><span class="cov0" title="0">{
+                t.Fatalf("Failed to initialize counter: %v", err)
+        }</span>
+
+        <span class="cov10" title="2">return func() </span><span class="cov10" title="2">{
+                Cleanup()
+                os.Remove(tmpFile)
+        }</span>
+} </pre>
+		
+		<pre class="file" id="file4" style="display: none">package handlers
+
+import (
+        "encoding/json"
+        "log"
+        "net/http"
+        "strconv"
+        "time"
+
+        "github.com/gorilla/mux"
+
+        "bugtracker-backend/internal/db"
+        "bugtracker-backend/internal/models"
+)
+
+func RegisterRoutes(r *mux.Router) <span class="cov0" title="0">{
+        r.HandleFunc("/bugs", CreateBug).Methods("POST")
+        r.HandleFunc("/bugs", GetBugs).Methods("GET")
+        r.HandleFunc("/bugs", DeleteAllBugs).Methods("DELETE")
+        r.HandleFunc("/bugs/{id}", GetBug).Methods("GET")
+        r.HandleFunc("/bugs/{id}", UpdateBug).Methods("PUT")
+        r.HandleFunc("/bugs/{id}", DeleteBug).Methods("DELETE")
+        RegisterCommentRoutes(r)
+}</span>
+
+func CreateBug(w http.ResponseWriter, r *http.Request) <span class="cov8" title="3">{
+        log.Printf("CreateBug called from %s", r.RemoteAddr)
+        log.Printf("Request headers: %v", r.Header)
+        log.Printf("Request method: %s", r.Method)
+
+        var req models.CreateBugRequest
+        if err := json.NewDecoder(r.Body).Decode(&amp;req); err != nil </span><span class="cov1" title="1">{
+                log.Printf("Failed to decode create bug request: %v", err)
+                w.WriteHeader(http.StatusBadRequest)
+                json.NewEncoder(w).Encode(map[string]string{
+                        "error": "invalid request body",
+                })
+                return
+        }</span>
+
+        <span class="cov5" title="2">if req.Title == "" </span><span class="cov1" title="1">{
+                w.WriteHeader(http.StatusBadRequest)
+                json.NewEncoder(w).Encode(map[string]string{
+                        "error": "title is required",
+                })
+                return
+        }</span>
+
+        <span class="cov1" title="1">bug := &amp;models.Bug{
+                Title:       req.Title,
+                Description: req.Description,
+                Status:      req.Status,
+                Priority:    req.Priority,
+                CreatedAt:   time.Now(),
+                UpdatedAt:   time.Now(),
+        }
+
+        if err := db.CreateBug(bug); err != nil </span><span class="cov0" title="0">{
+                log.Printf("Failed to create bug: %v", err)
+                w.WriteHeader(http.StatusInternalServerError)
+                json.NewEncoder(w).Encode(map[string]string{
+                        "error": err.Error(),
+                })
+                return
+        }</span>
+
+        <span class="cov1" title="1">w.Header().Set("Content-Type", "application/json")
+        w.WriteHeader(http.StatusCreated)
+        json.NewEncoder(w).Encode(bug)</span>
+}
+
+func GetBugs(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        log.Printf("GetBugs called from %s", r.RemoteAddr)
+        log.Printf("Request headers: %v", r.Header)
+        bugs, err := db.GetAllBugs()
+        if err != nil </span><span class="cov0" title="0">{
+                log.Printf("Error getting bugs: %v", err)
+                http.Error(w, err.Error(), http.StatusInternalServerError)
+                return
+        }</span>
+        <span class="cov0" title="0">log.Printf("Successfully retrieved %d bugs", len(bugs))
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(bugs)</span>
+}
+
+func GetBug(w http.ResponseWriter, r *http.Request) <span class="cov8" title="3">{
+        vars := mux.Vars(r)
+        id := vars["id"]
+
+        w.Header().Set("Content-Type", "application/json")
+
+        idInt, err := strconv.Atoi(id)
+        if err != nil </span><span class="cov1" title="1">{
+                w.WriteHeader(http.StatusBadRequest)
+                json.NewEncoder(w).Encode(map[string]string{
+                        "error": "invalid bug ID",
+                })
+                return
+        }</span>
+
+        <span class="cov5" title="2">bug, err := db.GetBug(idInt)
+        if err != nil </span><span class="cov1" title="1">{
+                status := http.StatusInternalServerError
+                if err.Error() == "bug not found" </span><span class="cov1" title="1">{
+                        status = http.StatusNotFound
+                }</span>
+                <span class="cov1" title="1">w.WriteHeader(status)
+                json.NewEncoder(w).Encode(map[string]string{
+                        "error": err.Error(),
+                })
+                return</span>
+        }
+
+        <span class="cov1" title="1">json.NewEncoder(w).Encode(bug)</span>
+}
+
+func UpdateBug(w http.ResponseWriter, r *http.Request) <span class="cov10" title="4">{
+        vars := mux.Vars(r)
+        id := vars["id"]
+
+        w.Header().Set("Content-Type", "application/json")
+
+        idInt, err := strconv.Atoi(id)
+        if err != nil </span><span class="cov1" title="1">{
+                w.WriteHeader(http.StatusBadRequest)
+                json.NewEncoder(w).Encode(map[string]string{
+                        "error": "invalid bug ID",
+                })
+                return
+        }</span>
+
+        <span class="cov8" title="3">var req models.CreateBugRequest
+        if err := json.NewDecoder(r.Body).Decode(&amp;req); err != nil </span><span class="cov1" title="1">{
+                w.WriteHeader(http.StatusBadRequest)
+                json.NewEncoder(w).Encode(map[string]string{
+                        "error": "invalid request body",
+                })
+                return
+        }</span>
+
+        <span class="cov5" title="2">existingBug, err := db.GetBug(idInt)
+        if err != nil </span><span class="cov1" title="1">{
+                status := http.StatusInternalServerError
+                if err.Error() == "bug not found" </span><span class="cov1" title="1">{
+                        status = http.StatusNotFound
+                }</span>
+                <span class="cov1" title="1">w.WriteHeader(status)
+                json.NewEncoder(w).Encode(map[string]string{
+                        "error": err.Error(),
+                })
+                return</span>
+        }
+
+        <span class="cov1" title="1">existingBug.Title = req.Title
+        existingBug.Description = req.Description
+        existingBug.Status = req.Status
+        existingBug.Priority = req.Priority
+        existingBug.UpdatedAt = time.Now()
+
+        if err := db.UpdateBug(existingBug); err != nil </span><span class="cov0" title="0">{
+                w.WriteHeader(http.StatusInternalServerError)
+                json.NewEncoder(w).Encode(map[string]string{
+                        "error": err.Error(),
+                })
+                return
+        }</span>
+
+        <span class="cov1" title="1">json.NewEncoder(w).Encode(existingBug)</span>
+}
+
+func DeleteBug(w http.ResponseWriter, r *http.Request) <span class="cov8" title="3">{
+        vars := mux.Vars(r)
+        id := vars["id"]
+
+        w.Header().Set("Content-Type", "application/json")
+
+        idInt, err := strconv.Atoi(id)
+        if err != nil </span><span class="cov1" title="1">{
+                w.WriteHeader(http.StatusBadRequest)
+                json.NewEncoder(w).Encode(map[string]string{
+                        "error": "invalid bug ID",
+                })
+                return
+        }</span>
+
+        <span class="cov5" title="2">if err := db.DeleteBug(idInt); err != nil </span><span class="cov1" title="1">{
+                status := http.StatusInternalServerError
+                if err.Error() == "bug not found" </span><span class="cov1" title="1">{
+                        status = http.StatusNotFound
+                }</span>
+                <span class="cov1" title="1">w.WriteHeader(status)
+                json.NewEncoder(w).Encode(map[string]string{
+                        "error": err.Error(),
+                })
+                return</span>
+        }
+
+        <span class="cov1" title="1">w.WriteHeader(http.StatusNoContent)</span>
+}
+
+func DeleteAllBugs(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        log.Printf("DeleteAllBugs called from %s", r.RemoteAddr)
+        
+        count, err := db.DeleteAllBugs()
+        if err != nil </span><span class="cov0" title="0">{
+                w.WriteHeader(http.StatusInternalServerError)
+                json.NewEncoder(w).Encode(map[string]string{
+                        "error": err.Error(),
+                })
+                return
+        }</span>
+
+        <span class="cov0" title="0">w.Header().Set("Content-Type", "application/json")
+        w.WriteHeader(http.StatusOK)
+        json.NewEncoder(w).Encode(map[string]int{
+                "deleted": count,
+        })</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package handlers
+
+import (
+        "encoding/json"
+        "log"
+        "net/http"
+        "strconv"
+
+        "bugtracker-backend/internal/db"
+        "bugtracker-backend/internal/models"
+
+        "github.com/gorilla/mux"
+)
+
+func RegisterCommentRoutes(r *mux.Router) <span class="cov0" title="0">{
+        r.HandleFunc("/bugs/{id}/comments", GetComments).Methods("GET")
+        r.HandleFunc("/bugs/{id}/comments", CreateComment).Methods("POST")
+}</span>
+
+func GetComments(w http.ResponseWriter, r *http.Request) <span class="cov8" title="3">{
+        vars := mux.Vars(r)
+        id := vars["id"]
+
+        log.Printf("Getting comments for bug %s", id)
+
+        if _, err := strconv.Atoi(id); err != nil </span><span class="cov1" title="1">{
+                w.WriteHeader(http.StatusBadRequest)
+                json.NewEncoder(w).Encode(map[string]string{
+                        "error": "invalid bug ID format",
+                })
+                return
+        }</span>
+
+        <span class="cov5" title="2">comments, err := db.GetComments(id)
+        if err != nil </span><span class="cov1" title="1">{
+                status := http.StatusInternalServerError
+                if err.Error() == "bug not found" </span><span class="cov1" title="1">{
+                        status = http.StatusNotFound
+                }</span> else<span class="cov0" title="0"> if err.Error() == "invalid bug ID format" </span><span class="cov0" title="0">{
+                        status = http.StatusBadRequest
+                }</span>
+                <span class="cov1" title="1">w.WriteHeader(status)
+                json.NewEncoder(w).Encode(map[string]string{
+                        "error": err.Error(),
+                })
+                return</span>
+        }
+
+        <span class="cov1" title="1">w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(comments)</span>
+}
+
+func CreateComment(w http.ResponseWriter, r *http.Request) <span class="cov10" title="4">{
+        vars := mux.Vars(r)
+        id := vars["id"]
+
+        log.Printf("Creating comment for bug %s", id)
+
+        if _, err := strconv.Atoi(id); err != nil </span><span class="cov0" title="0">{
+                w.WriteHeader(http.StatusBadRequest)
+                json.NewEncoder(w).Encode(map[string]string{
+                        "error": "invalid bug ID format",
+                })
+                return
+        }</span>
+
+        <span class="cov10" title="4">var req models.CreateCommentRequest
+        if err := json.NewDecoder(r.Body).Decode(&amp;req); err != nil </span><span class="cov1" title="1">{
+                w.WriteHeader(http.StatusBadRequest)
+                json.NewEncoder(w).Encode(map[string]string{
+                        "error": "invalid request body",
+                })
+                return
+        }</span>
+
+        <span class="cov8" title="3">if err := req.Validate(); err != nil </span><span class="cov1" title="1">{
+                w.WriteHeader(http.StatusBadRequest)
+                json.NewEncoder(w).Encode(map[string]string{
+                        "error": err.Error(),
+                })
+                return
+        }</span>
+
+        <span class="cov5" title="2">comment := &amp;models.Comment{
+                Content: req.Content,
+                Author:  req.Author,
+        }
+
+        if err := db.CreateComment(id, comment); err != nil </span><span class="cov1" title="1">{
+                status := http.StatusInternalServerError
+                if err.Error() == "bug not found" </span><span class="cov1" title="1">{
+                        status = http.StatusNotFound
+                }</span> else<span class="cov0" title="0"> if err.Error() == "invalid bug ID format" </span><span class="cov0" title="0">{
+                        status = http.StatusBadRequest
+                }</span>
+                <span class="cov1" title="1">w.WriteHeader(status)
+                json.NewEncoder(w).Encode(map[string]string{
+                        "error": err.Error(),
+                })
+                return</span>
+        }
+
+        <span class="cov1" title="1">w.Header().Set("Content-Type", "application/json")
+        w.WriteHeader(http.StatusCreated)
+        json.NewEncoder(w).Encode(comment)</span>
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package handlers
+
+import (
+        "bugtracker-backend/internal/config"
+        "encoding/json"
+        "log"
+        "net/http"
+)
+
+type HealthResponse struct {
+        Status  string `json:"status"`
+        Version string `json:"version"`
+}
+
+func HealthCheck(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        log.Printf("Health check request received from %s", r.RemoteAddr)
+        w.Header().Set("Content-Type", "application/json")
+        log.Printf("Sending health check response")
+        response := HealthResponse{
+                Status:  "ok",
+                Version: config.Backend_Version,
+        }
+        json.NewEncoder(w).Encode(response)
+}</span> </pre>
+		
+		<pre class="file" id="file7" style="display: none">package handlers
+
+import (
+        "bugtracker-backend/internal/db"
+        "testing"
+)
+
+func setupTestDB(t *testing.T) func() <span class="cov10" title="2">{
+        cleanup := db.SetupTestDB(t)
+        return cleanup
+}</span> </pre>
+		
+		<pre class="file" id="file8" style="display: none">package models
+
+import (
+        "fmt"
+        "time"
+)
+
+type Bug struct {
+        ID          int       `json:"id"`
+        Title       string    `json:"title"`
+        Description string    `json:"description"`
+        Status      string    `json:"status"`
+        Priority    string    `json:"priority"`
+        CreatedAt   time.Time `json:"created_at"`
+        UpdatedAt   time.Time `json:"updated_at"`
+}
+
+type CreateBugRequest struct {
+        Title       string `json:"title"`
+        Description string `json:"description"`
+        Status      string `json:"status"`
+        Priority    string `json:"priority"`
+}
+
+func (b *Bug) Validate() error <span class="cov5" title="4">{
+        if b.Title == "" </span><span class="cov1" title="1">{
+                return fmt.Errorf("title is required")
+        }</span>
+        <span class="cov4" title="3">if !isValidPriority(b.Priority) </span><span class="cov1" title="1">{
+                return fmt.Errorf("invalid priority")
+        }</span>
+        <span class="cov3" title="2">if !isValidStatus(b.Status) </span><span class="cov1" title="1">{
+                return fmt.Errorf("invalid status")
+        }</span>
+        <span class="cov1" title="1">return nil</span>
+}
+
+func (r *CreateBugRequest) Validate() error <span class="cov3" title="2">{
+        if r.Title == "" </span><span class="cov1" title="1">{
+                return fmt.Errorf("title is required")
+        }</span>
+        <span class="cov1" title="1">return nil</span>
+}
+
+func isValidPriority(p string) bool <span class="cov4" title="3">{
+        validPriorities := []string{"Low", "Medium", "High"}
+        return contains(validPriorities, p)
+}</span>
+
+func isValidStatus(s string) bool <span class="cov3" title="2">{
+        validStatuses := []string{"Open", "In Progress", "Closed"}
+        return contains(validStatuses, s)
+}</span>
+
+func contains(slice []string, item string) bool <span class="cov6" title="5">{
+        for _, s := range slice </span><span class="cov10" title="13">{
+                if s == item </span><span class="cov4" title="3">{
+                        return true
+                }</span>
+        }
+        <span class="cov3" title="2">return false</span>
+}
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package models
+
+import (
+        "fmt"
+        "time"
+)
+
+type Comment struct {
+        ID        int       `json:"id"`
+        BugID     int       `json:"bugId"`
+        Content   string    `json:"content"`
+        Author    string    `json:"author"`
+        CreatedAt time.Time `json:"createdAt"`
+}
+
+type CreateCommentRequest struct {
+        Content string `json:"content"`
+        Author  string `json:"author"`
+}
+
+func (c *Comment) Validate() error <span class="cov10" title="4">{
+        if c.Author == "" </span><span class="cov1" title="1">{
+                return fmt.Errorf("author is required")
+        }</span>
+        <span class="cov8" title="3">if c.Content == "" </span><span class="cov1" title="1">{
+                return fmt.Errorf("content is required")
+        }</span>
+        <span class="cov5" title="2">if c.BugID == 0 </span><span class="cov1" title="1">{
+                return fmt.Errorf("bug ID is required")
+        }</span>
+        <span class="cov1" title="1">return nil</span>
+}
+
+func (r *CreateCommentRequest) Validate() error <span class="cov8" title="3">{
+        if r.Author == "" </span><span class="cov1" title="1">{
+                return fmt.Errorf("author is required")
+        }</span>
+        <span class="cov5" title="2">if r.Content == "" </span><span class="cov1" title="1">{
+                return fmt.Errorf("content is required")
+        }</span>
+        <span class="cov1" title="1">return nil</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
