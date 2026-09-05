@@ -27,12 +27,24 @@ pipeline {
                         exit "$report_exit"
                     fi
                     exit "$test_exit"
+
+                    # Generate coverage report
+                    go test -coverprofile=coverage.out -covermode=atomic ./...
+                    go tool cover -html=coverage.out -o coverage.html
+
+                    mdir -p reports
+                    mv coverage.html reports/
                     '''
                 }
             }
             post {
                 always {
                     junit 'bugtracker-backend/test-results.xml'
+                    publishHTML target: [
+                        reportDir: 'bugtracker-backend/reports',
+                        reportFiles: 'coverage.html',
+                        reportName: 'Backend Coverage Report'
+                    ]
                 }
             }
         }
