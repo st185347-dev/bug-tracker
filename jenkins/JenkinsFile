@@ -2,7 +2,9 @@ pipeline {
     agent any
 
     stages {
-        stage('Unit Tests - Backend') {
+        stage('Execute Unit Tests') {
+            parallel {
+            stage('Unit Tests - Backend') {
                 agent {
                     docker{
                         image 'golang:1.21'
@@ -59,7 +61,7 @@ pipeline {
             }
         }
 
-        stage('Unit Tests - Frontend') {
+            stage('Unit Tests - Frontend') {
                 agent {
                     docker{
                         image 'node:20-alpine'
@@ -88,4 +90,5 @@ pipeline {
             }
         }
     }
+}
 }
